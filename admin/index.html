@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TBM Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#050505;font-family:'Courier New',monospace;color:#00ffcc;min-height:100vh;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid #0d2b22;background:#080808;flex-wrap:wrap;gap:8px;}
+.topbar-title{font-size:12px;letter-spacing:0.15em;}.topbar-sub{font-size:10px;color:#1a5544;letter-spacing:0.1em;margin-top:2px;}
+.sig-dot{width:7px;height:7px;border-radius:50%;background:#00ffcc;animation:blink 1.5s infinite;display:inline-block;margin-right:8px;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.tbtn{background:transparent;border:1px solid #0d3328;color:#00ffcc;font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.12em;padding:5px 12px;cursor:pointer;transition:all 0.15s;}
+.tbtn:hover{background:#0d2b22;border-color:#00ffcc;}
+.tbtn.danger{border-color:#3a1111;color:#ff4444;}.tbtn.danger:hover{background:#3a1111;}
+.tbtn.primary{background:#0d2b22;border-color:#00ffcc;}
+.nav-tabs{display:flex;border-bottom:1px solid #0d2b22;background:#060606;}
+.ntab{padding:10px 20px;font-size:11px;letter-spacing:0.12em;color:#1a5544;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;}
+.ntab.active{color:#00ffcc;border-bottom-color:#00ffcc;background:#080808;}
+.ntab:hover:not(.active){color:#00aa88;}
+.main{padding:20px;}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
+.stat-card{background:#070707;border:1px solid #0d2b22;padding:14px 16px;}
+.stat-label{font-size:9px;letter-spacing:0.16em;color:#1a5544;margin-bottom:6px;}
+.stat-val{font-size:28px;color:#00ffcc;letter-spacing:0.05em;line-height:1;}
+.stat-val.warn{color:#ffaa00;}.stat-sub{font-size:9px;color:#1a5544;margin-top:4px;letter-spacing:0.1em;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.section-title{font-size:10px;letter-spacing:0.18em;color:#00ffcc;}
+.section-meta{font-size:9px;color:#1a5544;letter-spacing:0.1em;}
+.search-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.field-input{background:#060606;border:1px solid #0d2b22;color:#00ffcc;font-family:'Courier New',monospace;font-size:11px;padding:7px 12px;outline:none;flex:1;min-width:160px;letter-spacing:0.04em;}
+.field-input:focus{border-color:#00aa77;}
+.field-input::placeholder{color:#1a5544;}
+.filter-sel{background:#060606;border:1px solid #0d2b22;color:#00ffcc;font-family:'Courier New',monospace;font-size:10px;padding:7px 10px;outline:none;cursor:pointer;}
+.filter-sel option{background:#060606;}
+.table-wrap{overflow-x:auto;border:1px solid #0d2b22;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead tr{background:#080808;border-bottom:1px solid #0d2b22;}
+th{padding:8px 12px;text-align:left;font-size:9px;letter-spacing:0.15em;color:#1a5544;white-space:nowrap;font-weight:normal;}
+tbody tr{border-bottom:1px solid #0a1a14;transition:background 0.1s;cursor:pointer;}
+tbody tr:hover{background:#060f0b;}
+td{padding:9px 12px;color:#aaffee;vertical-align:middle;}
+td.dim{color:#1a5544;}td.wallet{font-size:10px;color:#00aa77;letter-spacing:0.04em;}
+.badge-pill{display:inline-block;padding:2px 8px;font-size:9px;letter-spacing:0.1em;border:1px solid;}
+.badge-pill.done{border-color:#0d3328;color:#00aa77;}
+.badge-pill.partial{border-color:#3a2a00;color:#ffaa00;}
+.badge-pill.new{border-color:#003a3a;color:#00ffcc;}
+.detail-panel{background:#060606;border:1px solid #0d2b22;padding:16px;margin-top:14px;display:none;}
+.detail-panel.open{display:block;}
+.detail-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #0d2b22;}
+.detail-name{font-size:16px;color:#00ffcc;letter-spacing:0.08em;}
+.detail-id{font-size:9px;color:#1a5544;margin-top:3px;letter-spacing:0.12em;}
+.d-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.d-field label{font-size:9px;letter-spacing:0.15em;color:#1a5544;display:block;margin-bottom:3px;}
+.d-field span{font-size:11px;color:#aaffee;word-break:break-all;}
+.close-x{background:transparent;border:none;color:#1a5544;font-size:16px;cursor:pointer;font-family:'Courier New',monospace;}
+.close-x:hover{color:#ff4444;}
+.task-chip{font-size:9px;letter-spacing:0.1em;padding:2px 7px;border:1px solid;display:inline-block;margin:2px 3px 2px 0;}
+.task-chip.done{border-color:#0d3328;color:#00aa77;}
+.task-chip.miss{border-color:#2a1111;color:#443333;}
+.mini-bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;}
+.mbl{font-size:10px;color:#1a5544;letter-spacing:0.08em;width:120px;flex-shrink:0;}
+.mbt{flex:1;height:8px;background:#080808;border:1px solid #0d2b22;}
+.mbf{height:100%;background:#00ffcc;transition:width 0.6s;}
+.mbf.amber{background:#ffaa00;}
+.mbn{font-size:10px;color:#00aa77;width:24px;text-align:right;flex-shrink:0;}
+.log-line{font-size:10px;color:#1a5544;letter-spacing:0.06em;padding:5px 0;border-bottom:1px solid #080808;display:flex;gap:12px;}
+.log-time{color:#0d3328;white-space:nowrap;}
+.log-msg.hi{color:#00aa77;}.log-msg.warn{color:#ffaa00;}
+.page{display:none;}.page.active{display:block;}
+.empty{padding:40px;text-align:center;color:#1a5544;font-size:11px;letter-spacing:0.12em;}
+/* CONFIG PANEL */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:640px){.config-grid{grid-template-columns:1fr;}.d-grid{grid-template-columns:1fr;}}
+.config-card{background:#070707;border:1px solid #0d2b22;padding:16px;}
+.config-card h3{font-size:9px;letter-spacing:0.18em;color:#00ffcc;margin-bottom:12px;}
+.field-label{font-size:9px;letter-spacing:0.14em;color:#1a5544;display:block;margin-bottom:5px;margin-top:10px;}
+.field-label:first-of-type{margin-top:0;}
+.toggle-row{display:flex;align-items:center;gap:12px;margin-top:10px;}
+.toggle{width:40px;height:20px;background:#0d2b22;border:1px solid #1a5544;border-radius:10px;position:relative;cursor:pointer;transition:all 0.2s;}
+.toggle.on{background:#0d4430;border-color:#00ffcc;}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#1a5544;border-radius:50%;top:2px;left:2px;transition:all 0.2s;}
+.toggle.on::after{left:22px;background:#00ffcc;}
+.status-badge{display:inline-block;padding:3px 10px;font-size:9px;letter-spacing:0.12em;border:1px solid;}
+.status-badge.open{border-color:#0d3328;color:#00aa77;}
+.status-badge.closed{border-color:#3a1111;color:#ff4444;}
+.status-badge.scheduled{border-color:#3a2a00;color:#ffaa00;}
+.save-btn{width:100%;margin-top:14px;padding:10px;background:#0d2b22;border:1px solid #00ffcc;color:#00ffcc;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;}
+.save-btn:hover{background:#00ffcc;color:#000;}
+.toast{position:fixed;bottom:20px;right:20px;background:#0d2b22;border:1px solid #00ffcc;padding:10px 18px;font-size:11px;letter-spacing:0.12em;color:#00ffcc;z-index:999;display:none;}
+.toast.err{border-color:#ff4444;color:#ff4444;background:#1a0808;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <div class="topbar-title"><span class="sig-dot"></span>THEBUENMOMENTO // ADMIN</div>
+    <div class="topbar-sub">ROOT_ACCESS &nbsp;|&nbsp; <span id="live-time"></span></div>
+  </div>
+  <div class="topbar-right">
+    <button class="tbtn" onclick="exportCSV()">[ EXPORT CSV ]</button>
+    <button class="tbtn" onclick="loadAgents()">[ REFRESH ]</button>
+    <button class="tbtn danger" onclick="clearLocal()">[ CLEAR LOCAL ]</button>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="ntab active" onclick="showPage('agents',this)">AGENTS</div>
+  <div class="ntab" onclick="showPage('config',this)">CONFIG</div>
+  <div class="ntab" onclick="showPage('analytics',this)">ANALYTICS</div>
+  <div class="ntab" onclick="showPage('log',this)">LOG</div>
+</div>
+
+<div class="main">
+
+  <!-- AGENTS -->
+  <div class="page active" id="page-agents">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">TOTAL AGENTS</div><div class="stat-val" id="s-total">0</div><div class="stat-sub">REGISTERED</div></div>
+      <div class="stat-card"><div class="stat-label">ALL TASKS DONE</div><div class="stat-val" id="s-complete">0</div><div class="stat-sub">COMPLETE</div></div>
+      <div class="stat-card"><div class="stat-label">WALLETS SAVED</div><div class="stat-val" id="s-wallets">0</div><div class="stat-sub">ADDRESSES</div></div>
+      <div class="stat-card"><div class="stat-label">TODAY</div><div class="stat-val warn" id="s-today">0</div><div class="stat-sub">NEW AGENTS</div></div>
+    </div>
+    <div class="search-row">
+      <input class="field-input" id="q" placeholder="> SEARCH USERNAME, WALLET, REFERRAL..." oninput="renderTable()"/>
+      <select class="filter-sel" id="f-task" onchange="renderTable()">
+        <option value="">ALL AGENTS</option><option value="complete">COMPLETE ONLY</option><option value="partial">PARTIAL</option>
+      </select>
+      <select class="filter-sel" id="f-ref" onchange="renderTable()">
+        <option value="">ALL REFERRALS</option><option>X / Twitter</option><option>Instagram</option><option>Friend / Referral</option><option>Telegram</option><option>Discord</option><option>Other</option>
+      </select>
+    </div>
+    <div class="section-head">
+      <span class="section-title">AGENT REGISTRY</span>
+      <span class="section-meta" id="tbl-count">0 RECORDS</span>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>#</th><th>X HANDLE</th><th>TASKS</th><th>QUOTE LINK</th><th>REFERRAL</th><th>WALLET</th><th>CONTRIBUTION</th><th>TIMESTAMP</th></tr></thead>
+      <tbody id="tbody"></tbody></table>
+    </div>
+    <div id="empty-msg" class="empty" style="display:none;">> NO RECORDS. CLICK [ REFRESH ] TO LOAD FROM FIREBASE.</div>
+    <div class="detail-panel" id="detail">
+      <div class="detail-top">
+        <div><div class="detail-name" id="d-name">—</div><div class="detail-id" id="d-id">—</div></div>
+        <button class="close-x" onclick="closeDetail()">[ X ]</button>
+      </div>
+      <div class="d-grid" id="d-grid"></div>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="page" id="page-config">
+    <div class="stats-row" style="margin-bottom:20px;">
+      <div class="stat-card">
+        <div class="stat-label">FORM STATUS</div>
+        <div class="stat-val" id="cfg-status-val" style="font-size:16px;margin-top:4px;">LOADING...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">CURRENT TWEET ID</div>
+        <div style="font-size:11px;color:#00aa77;margin-top:4px;word-break:break-all;" id="cfg-tweet-display">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">OPEN AT</div>
+        <div style="font-size:11px;color:#aaffee;margin-top:4px;" id="cfg-openat-display">NOT SET</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">CLOSE AT</div>
+        <div style="font-size:11px;color:#aaffee;margin-top:4px;" id="cfg-closeat-display">NOT SET</div>
+      </div>
+    </div>
+
+    <div class="config-grid">
+      <!-- Tweet settings -->
+      <div class="config-card">
+        <h3>TWEET SETTINGS</h3>
+        <label class="field-label">TWEET URL (paste full URL)</label>
+        <input class="field-input" id="cfg-tweet-url" placeholder="https://x.com/TheBuenMomento/status/..." style="width:100%;"/>
+        <div style="font-size:9px;color:#1a5544;margin-top:6px;letter-spacing:0.08em;">Tweet ID will be extracted automatically from the URL.</div>
+        <button class="save-btn" onclick="saveTweet()">[ SAVE TWEET LINK ]</button>
+      </div>
+
+      <!-- Timer settings -->
+      <div class="config-card">
+        <h3>FORM TIMER</h3>
+        <label class="field-label">OPEN AT (leave blank = open now)</label>
+        <input class="field-input" type="datetime-local" id="cfg-open-at" style="width:100%;"/>
+        <label class="field-label">CLOSE AT (leave blank = never closes)</label>
+        <input class="field-input" type="datetime-local" id="cfg-close-at" style="width:100%;"/>
+        <button class="save-btn" onclick="saveTimer()">[ SAVE TIMER ]</button>
+      </div>
+
+      <!-- Toggle -->
+      <div class="config-card">
+        <h3>MANUAL TOGGLE</h3>
+        <div style="font-size:10px;color:#1a5544;letter-spacing:0.08em;margin-bottom:12px;">Override timer — force form open or closed instantly.</div>
+        <div class="toggle-row">
+          <div class="toggle" id="open-toggle" onclick="toggleOpen()"></div>
+          <span style="font-size:11px;letter-spacing:0.1em;" id="open-toggle-lbl">FORM: CLOSED</span>
+        </div>
+        <button class="save-btn" onclick="saveToggle()" style="margin-top:16px;">[ APPLY TOGGLE ]</button>
+      </div>
+
+      <!-- Admin key -->
+      <div class="config-card">
+        <h3>ADMIN ACCESS</h3>
+        <div style="font-size:10px;color:#1a5544;letter-spacing:0.08em;margin-bottom:12px;">Enter your ADMIN_SECRET_KEY to authenticate API calls from this panel.</div>
+        <label class="field-label">ADMIN SECRET KEY</label>
+        <input class="field-input" type="password" id="admin-key" placeholder="your secret key..." style="width:100%;"/>
+        <button class="save-btn" onclick="saveAdminKey()">[ SAVE KEY LOCALLY ]</button>
+        <div style="font-size:9px;color:#1a5544;margin-top:6px;letter-spacing:0.08em;">Stored in localStorage only — never sent except in API headers.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="page" id="page-analytics">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">COMPLETION RATE</div><div class="stat-val" id="a-rate">0%</div></div>
+      <div class="stat-card"><div class="stat-label">FOLLOW RATE</div><div class="stat-val" id="a-follow">0%</div></div>
+      <div class="stat-card"><div class="stat-label">QUOTE RATE</div><div class="stat-val" id="a-quote">0%</div></div>
+      <div class="stat-card"><div class="stat-label">WALLET RATE</div><div class="stat-val" id="a-wallet">0%</div></div>
+    </div>
+    <div style="margin-top:20px;"><div class="section-head"><span class="section-title">REFERRAL SOURCES</span></div><div id="ref-chart"></div></div>
+    <div style="margin-top:20px;"><div class="section-head"><span class="section-title">TASK COMPLETION</span></div><div id="task-chart"></div></div>
+  </div>
+
+  <!-- LOG -->
+  <div class="page" id="page-log">
+    <div class="section-head"><span class="section-title">SYSTEM LOG</span><button class="tbtn" onclick="clearLog()">[ CLEAR ]</button></div>
+    <div id="log-wrap" style="border:1px solid #0d2b22;padding:10px 14px;min-height:160px;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let agents=[],logs=[];
+function ts(){return new Date().toLocaleTimeString('en-GB',{hour12:false});}
+function today(){return new Date().toISOString().split('T')[0];}
+function pct(n,d){return Math.round((n/(d||1))*100)+'%';}
+function getKey(){return localStorage.getItem('tbm_admin_key')||'';}
+
+function toast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
+function log(msg,type=''){logs.unshift({time:ts(),msg,type});if(logs.length>200)logs.pop();renderLog();}
+function renderLog(){const w=document.getElementById('log-wrap');if(!w)return;if(!logs.length){w.innerHTML='<div class="empty">> NO LOG ENTRIES YET</div>';return;}w.innerHTML=logs.map(l=>'<div class="log-line"><span class="log-time">['+l.time+']</span><span class="log-msg '+l.type+'">'+l.msg+'</span></div>').join('');}
+function showPage(p,tab){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.ntab').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');if(tab)tab.classList.add('active');if(p==='analytics')renderAnalytics();if(p==='config')loadConfig();}
+function tasksDone(a){return(a.tasks?.follow?1:0)+(a.tasks?.like?1:0)+(a.tasks?.retweet?1:0)+(a.tasks?.quote?1:0);}
+
+function updateStats(){
+  const t=agents.length,c=agents.filter(a=>tasksDone(a)===4).length,w=agents.filter(a=>a.wallet&&a.wallet.length>5).length,td=agents.filter(a=>(a.timestamp||'').startsWith(today())).length;
+  document.getElementById('s-total').textContent=t;document.getElementById('s-complete').textContent=c;document.getElementById('s-wallets').textContent=w;document.getElementById('s-today').textContent=td;
+}
+
+function renderTable(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  const ft=document.getElementById('f-task').value,fr=document.getElementById('f-ref').value;
+  let data=[...agents];
+  if(q)data=data.filter(a=>['username','wallet','referral','contribution'].some(k=>(a[k]||'').toLowerCase().includes(q)));
+  if(ft==='complete')data=data.filter(a=>tasksDone(a)===4);if(ft==='partial')data=data.filter(a=>tasksDone(a)>0&&tasksDone(a)<4);
+  if(fr)data=data.filter(a=>a.referral===fr);
+  const tbody=document.getElementById('tbody'),empty=document.getElementById('empty-msg');
+  document.getElementById('tbl-count').textContent=data.length+' RECORDS';
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}empty.style.display='none';
+  tbody.innerHTML=data.map((a,i)=>{const done=tasksDone(a);const bc=done===4?'done':done>0?'partial':'new';const bl=done===4?'COMPLETE':done+'/4 DONE';const w=a.wallet?(a.wallet.substring(0,8)+'...'+a.wallet.slice(-4)):'—';const cont=(a.contribution||'').substring(0,28)+((a.contribution||'').length>28?'...':'');const ql=a.quoteLink?(a.quoteLink.substring(0,20)+'...'):'—';const time=(a.timestamp||'').replace('T',' ').substring(0,16);const idx=agents.indexOf(a);
+    return '<tr onclick="openDetail('+idx+')"><td class="dim">'+String(i+1).padStart(2,'0')+'</td><td style="color:#00ffcc;">'+( a.username||'—')+'</td><td><span class="badge-pill '+bc+'">'+bl+'</span></td><td class="dim" style="font-size:10px;">'+ql+'</td><td class="dim">'+(a.referral||'—')+'</td><td class="wallet">'+w+'</td><td class="dim" style="font-size:10px;">'+(cont||'—')+'</td><td class="dim" style="font-size:10px;">'+time+'</td></tr>';
+  }).join('');
+}
+
+function openDetail(i){const a=agents[i];if(!a)return;document.getElementById('d-name').textContent=a.username||'UNKNOWN';document.getElementById('d-id').textContent=(a.id||'—')+' · '+(a.timestamp||'').replace('T',' ').substring(0,16);const chips=[['follow','FOLLOW'],['like','LIKE'],['retweet','RETWEET'],['quote','QUOTE']].map(([k,l])=>'<span class="task-chip '+(a.tasks?.[k]?'done':'miss')+'">'+l+'</span>').join('');document.getElementById('d-grid').innerHTML='<div class="d-field"><label>X HANDLE</label><span>'+(a.username||'—')+'</span></div><div class="d-field"><label>REFERRAL</label><span>'+(a.referral||'—')+'</span></div><div class="d-field" style="grid-column:1/-1"><label>WALLET</label><span style="color:#00ffcc;">'+(a.wallet||'NOT SUBMITTED')+'</span></div><div class="d-field" style="grid-column:1/-1"><label>QUOTE LINK</label><span>'+(a.quoteLink||'—')+'</span></div><div class="d-field" style="grid-column:1/-1"><label>CONTRIBUTION</label><span>'+(a.contribution||'—')+'</span></div><div class="d-field" style="grid-column:1/-1"><label>TASKS</label><div style="margin-top:4px;">'+chips+'</div></div>';document.getElementById('detail').classList.add('open');document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'nearest'});}
+function closeDetail(){document.getElementById('detail').classList.remove('open');}
+
+async function loadAgents(){
+  const key=getKey();
+  if(!key){toast('Set your admin key in CONFIG tab first','err');return;}
+  try{
+    const r=await fetch('/api/get-agents',{headers:{'x-admin-key':key}});
+    if(!r.ok){toast('Auth failed — check admin key','err');return;}
+    const data=await r.json();agents=data.agents||[];
+    updateStats();renderTable();log('LOADED '+agents.length+' AGENTS FROM FIREBASE','hi');toast('Loaded '+agents.length+' agents');
+  }catch(e){
+    /* fallback localStorage */
+    try{agents=JSON.parse(localStorage.getItem('tbm_agents')||'[]');}catch(x){}
+    updateStats();renderTable();log('Firebase unreachable — loaded from localStorage','warn');toast('Loaded from local storage','warn');
+  }
+}
+
+function renderAnalytics(){
+  const t=agents.length||1,c=agents.filter(a=>tasksDone(a)===4).length,fl=agents.filter(a=>a.tasks?.follow).length,qt=agents.filter(a=>a.tasks?.quote).length,wl=agents.filter(a=>a.wallet&&a.wallet.length>5).length;
+  document.getElementById('a-rate').textContent=pct(c,t);document.getElementById('a-follow').textContent=pct(fl,t);document.getElementById('a-quote').textContent=pct(qt,t);document.getElementById('a-wallet').textContent=pct(wl,t);
+  const refs=['X / Twitter','Instagram','Friend / Referral','Telegram','Discord','Other'];const rc=refs.map(r=>({l:r,n:agents.filter(a=>a.referral===r).length}));const mr=Math.max(...rc.map(r=>r.n),1);
+  document.getElementById('ref-chart').innerHTML=rc.map(r=>'<div class="mini-bar-row"><div class="mbl">'+r.l.toUpperCase()+'</div><div class="mbt"><div class="mbf" style="width:'+Math.round(r.n/mr*100)+'%"></div></div><div class="mbn">'+r.n+'</div></div>').join('');
+  const tasks=[{l:'FOLLOW',n:fl},{l:'LIKE',n:agents.filter(a=>a.tasks?.like).length},{l:'RETWEET',n:agents.filter(a=>a.tasks?.retweet).length},{l:'QUOTE',n:qt}];const mt=Math.max(...tasks.map(t=>t.n),1);
+  document.getElementById('task-chart').innerHTML=tasks.map(t=>'<div class="mini-bar-row"><div class="mbl">'+t.l+'</div><div class="mbt"><div class="mbf amber" style="width:'+Math.round(t.n/mt*100)+'%"></div></div><div class="mbn">'+t.n+'</div></div>').join('');
+}
+
+/* CONFIG */
+let currentCfg={};
+async function loadConfig(){
+  try{
+    const r=await fetch('/api/get-config');if(r.ok){currentCfg=await r.json();}
+    document.getElementById('cfg-tweet-display').textContent=currentCfg.tweetId||'—';
+    document.getElementById('cfg-tweet-url').value=currentCfg.tweetUrl||'';
+    if(currentCfg.openAt)document.getElementById('cfg-open-at').value=currentCfg.openAt.substring(0,16);
+    if(currentCfg.closeAt)document.getElementById('cfg-close-at').value=currentCfg.closeAt.substring(0,16);
+    document.getElementById('cfg-openat-display').textContent=currentCfg.openAt?currentCfg.openAt.replace('T',' ').substring(0,16):'NOT SET';
+    document.getElementById('cfg-closeat-display').textContent=currentCfg.closeAt?currentCfg.closeAt.replace('T',' ').substring(0,16):'NOT SET';
+    const isOpen=currentCfg.isOpen;
+    document.getElementById('cfg-status-val').textContent=isOpen?'OPEN':'CLOSED';
+    document.getElementById('cfg-status-val').style.color=isOpen?'#00ffcc':'#ff4444';
+    const tog=document.getElementById('open-toggle');tog.classList.toggle('on',isOpen);document.getElementById('open-toggle-lbl').textContent='FORM: '+(isOpen?'OPEN':'CLOSED');
+    log('CONFIG LOADED','hi');
+  }catch(e){log('Failed to load config','warn');}
+}
+
+async function saveToApi(body){
+  const key=getKey();if(!key){toast('Set admin key first','err');return false;}
+  try{const r=await fetch('/api/update-config',{method:'POST',headers:{'Content-Type':'application/json','x-admin-key':key},body:JSON.stringify(body)});if(!r.ok){toast('Save failed — check admin key','err');return false;}return true;}
+  catch(e){toast('Network error','err');return false;}
+}
+
+async function saveTweet(){
+  const url=document.getElementById('cfg-tweet-url').value.trim();
+  if(!url){toast('Enter a tweet URL','err');return;}
+  const match=url.match(/status\/(\d+)/);if(!match){toast('Invalid tweet URL','err');return;}
+  const ok=await saveToApi({tweetUrl:url,tweetId:match[1]});
+  if(ok){toast('Tweet link saved!');log('TWEET URL UPDATED: '+url,'hi');loadConfig();}
+}
+
+async function saveTimer(){
+  const openAt=document.getElementById('cfg-open-at').value;const closeAt=document.getElementById('cfg-close-at').value;
+  const ok=await saveToApi({openAt:openAt?new Date(openAt).toISOString():null,closeAt:closeAt?new Date(closeAt).toISOString():null});
+  if(ok){toast('Timer saved!');log('TIMER UPDATED','hi');loadConfig();}
+}
+
+function toggleOpen(){const t=document.getElementById('open-toggle');t.classList.toggle('on');const on=t.classList.contains('on');document.getElementById('open-toggle-lbl').textContent='FORM: '+(on?'OPEN':'CLOSED');}
+async function saveToggle(){const isOpen=document.getElementById('open-toggle').classList.contains('on');const ok=await saveToApi({isOpen});if(ok){toast('Form '+(isOpen?'opened':'closed')+'!');log('FORM TOGGLED: '+(isOpen?'OPEN':'CLOSED'),'hi');loadConfig();}}
+
+function saveAdminKey(){const k=document.getElementById('admin-key').value.trim();if(!k){toast('Enter a key','err');return;}localStorage.setItem('tbm_admin_key',k);toast('Admin key saved locally');log('ADMIN KEY SAVED','hi');}
+
+function clearLocal(){if(!confirm('Clear local agent data?'))return;localStorage.removeItem('tbm_agents');agents=[];updateStats();renderTable();log('LOCAL DATA CLEARED','warn');}
+function clearLog(){logs=[];renderLog();}
+
+function exportCSV(){
+  if(!agents.length){log('EXPORT FAILED — NO DATA','warn');return;}
+  const hdr=['ID','USERNAME','FOLLOW','LIKE','RETWEET','QUOTE','QUOTE_LINK','REFERRAL','CONTRIBUTION','WALLET','TIMESTAMP'];
+  const rows=agents.map(a=>[a.id,a.username,a.tasks?.follow?1:0,a.tasks?.like?1:0,a.tasks?.retweet?1:0,a.tasks?.quote?1:0,a.quoteLink||'',a.referral||'','"'+(a.contribution||'')+'"',a.wallet||'',a.timestamp||''].join(','));
+  const csv=[hdr.join(','),...rows].join('\n');const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='tbm_agents_'+today()+'.csv';a.click();URL.revokeObjectURL(url);
+  log('CSV EXPORTED — '+agents.length+' RECORDS','hi');
+}
+
+window.addEventListener('message',e=>{if(e.data&&e.data.type==='TBM_AGENT'){agents.unshift({...e.data.payload});updateStats();renderTable();log('LIVE: NEW AGENT — '+(e.data.payload.username||'?'),'hi');}});
+setInterval(()=>{const e=document.getElementById('live-time');if(e)e.textContent=new Date().toLocaleTimeString('en-GB',{hour12:false})+' UTC';},1000);
+
+log('ADMIN TERMINAL INITIALIZED','hi');log('CLICK [ REFRESH ] TO LOAD AGENTS FROM FIREBASE');
+updateStats();renderTable();renderLog();
+
+/* auto-load key if saved */
+const savedKey=localStorage.getItem('tbm_admin_key');if(savedKey)document.getElementById('admin-key').value=savedKey;
+</script>
+</body>
+</html>

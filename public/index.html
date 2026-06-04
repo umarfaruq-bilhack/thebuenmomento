@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TheBuenMomento — Terminal</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:#000;font-family:'Courier New',monospace;color:#00ffcc;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+#matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.18;}
+#scanlines{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);}
+#vignette{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.88) 100%);}
+.sweep{position:fixed;left:0;width:100%;height:2px;background:rgba(0,255,204,0.05);pointer-events:none;z-index:2;animation:sweep 5s linear infinite;}
+@keyframes sweep{0%{top:-2px;}100%{top:100vh;}}
+.topbar{position:relative;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:10px 20px;font-size:11px;letter-spacing:0.12em;border-bottom:1px solid rgba(0,255,204,0.07);}
+.signal{display:flex;align-items:center;gap:8px;}
+.sig-dot{width:7px;height:7px;border-radius:50%;background:#00ffcc;animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 6px #00ffcc;}50%{opacity:0.2;box-shadow:none;}}
+.topbar-right{display:flex;gap:10px;align-items:center;}
+.tbtn{border:1px solid rgba(0,255,204,0.25);padding:4px 12px;font-size:10px;color:rgba(0,255,204,0.5);letter-spacing:0.12em;font-family:'Courier New',monospace;background:transparent;cursor:pointer;transition:all 0.2s;}
+.tbtn:hover,.tbtn.on{color:#00ffcc;border-color:#00ffcc;}
+.window-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;z-index:10;}
+.terminal{width:100%;max-width:860px;border:1px solid rgba(0,255,204,0.15);background:rgba(0,0,0,0.82);}
+.win-bar{background:rgba(0,20,15,0.96);display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid rgba(0,255,204,0.1);gap:12px;}
+.win-controls{display:flex;gap:5px;}
+.wc{width:10px;height:10px;border:1px solid #333;}.wc.r{border-color:#ff5555;}
+.win-title{flex:1;text-align:center;font-size:11px;color:rgba(0,255,204,0.3);letter-spacing:0.15em;}
+.win-cmd{font-size:11px;color:rgba(0,255,204,0.2);letter-spacing:0.1em;}
+.win-path{background:rgba(0,8,6,0.9);padding:4px 14px;font-size:10px;color:rgba(0,255,204,0.18);letter-spacing:0.1em;border-bottom:1px solid rgba(0,255,204,0.06);display:flex;justify-content:space-between;}
+.screen{padding:24px 28px;min-height:460px;display:flex;flex-direction:column;}
+.ascii-title{color:#00ffcc;font-size:clamp(5px,2vw,14px);line-height:1.15;margin-bottom:20px;white-space:pre;text-shadow:0 0 10px rgba(0,255,204,0.7);}
+.line{margin:3px 0;font-size:13px;letter-spacing:0.05em;}
+.line.dim{color:#1a5c44;}.line.bright{color:#00ffcc;text-shadow:0 0 6px rgba(0,255,204,0.4);}
+.line.white{color:#88bbaa;}.line.err{color:#ff4444;text-shadow:0 0 8px rgba(255,68,68,0.5);}
+.line.warn{color:#ffaa00;text-shadow:0 0 6px rgba(255,170,0,0.3);}
+.prompt-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.prompt-label{color:#00ffcc;font-size:13px;white-space:nowrap;text-shadow:0 0 4px rgba(0,255,204,0.4);}
+.prompt-input{background:transparent;border:none;outline:none;color:#fff;font-family:'Courier New',monospace;font-size:13px;flex:1;caret-color:#00ffcc;}
+.action-btn{display:inline-block;margin:4px 6px 4px 0;padding:7px 16px;border:1px solid rgba(0,255,204,0.55);color:#00ffcc;font-family:'Courier New',monospace;font-size:12px;letter-spacing:0.1em;cursor:pointer;background:rgba(0,255,204,0.03);text-decoration:none;transition:all 0.2s;text-shadow:0 0 4px rgba(0,255,204,0.3);}
+.action-btn:hover{background:rgba(0,255,204,0.1);border-color:#00ffcc;box-shadow:0 0 14px rgba(0,255,204,0.2);}
+.action-btn.done-btn{border-color:rgba(0,80,55,0.4);color:#1a5c44;cursor:default;pointer-events:none;background:transparent;text-shadow:none;box-shadow:none;}
+.countdown{font-size:64px;color:#ff4444;text-align:center;font-weight:bold;letter-spacing:0.2em;margin:10px 0;text-shadow:0 0 24px rgba(255,68,68,0.9);}
+.timer-units{display:flex;justify-content:center;gap:20px;margin-top:16px;}
+.timer-unit{text-align:center;}
+.timer-unit .val{font-size:36px;color:#00ffcc;text-shadow:0 0 14px rgba(0,255,204,0.6);display:block;letter-spacing:0.05em;}
+.timer-unit .lbl{font-size:9px;color:#1a5c44;letter-spacing:0.18em;}
+@keyframes glitch{0%,100%{transform:translate(0);filter:none;}10%{transform:translate(-4px,2px);filter:hue-rotate(90deg);}20%{transform:translate(4px,-2px);filter:hue-rotate(-90deg);}30%{transform:translate(-2px,3px);}40%{transform:translate(3px,-1px);filter:brightness(2);}50%{transform:translate(-3px,2px);}60%{transform:translate(2px,-3px);filter:hue-rotate(180deg);}70%{transform:translate(-4px,1px);}80%{transform:translate(3px,2px);filter:brightness(0.5);}90%{transform:translate(-2px,-2px);}}
+.glitch{animation:glitch 0.1s infinite;}
+@keyframes rgbsplit{0%,100%{text-shadow:2px 0 #f00,-2px 0 #0ff,0 0 8px rgba(255,68,68,0.6);}50%{text-shadow:-2px 0 #f00,2px 0 #0ff,0 0 14px rgba(255,68,68,0.9);}}
+.rgbsplit{animation:rgbsplit 0.08s infinite;}
+</style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+<div id="scanlines"></div><div id="vignette"></div><div class="sweep"></div>
+<div class="topbar">
+  <div class="signal"><div class="sig-dot"></div><span>SIGNAL : STABLE</span></div>
+  <div class="topbar-right">
+    <button class="tbtn on" id="mute-btn" onclick="toggleMute()">MUTE SOUND</button>
+    <span style="color:rgba(0,255,204,0.2);font-size:10px;letter-spacing:0.1em;" id="live-clock"></span>
+  </div>
+</div>
+<div class="window-wrap">
+  <div class="terminal">
+    <div class="win-bar">
+      <div class="win-controls"><div class="wc r"></div><div class="wc"></div><div class="wc"></div></div>
+      <div class="win-title">THEBUENMOMENTO powered by @TheBuenMomento</div>
+      <div class="win-cmd">CMD://LOCAL</div>
+    </div>
+    <div class="win-path"><span>C:\THEBUENMOMENTO\GHOSTLINE\TERMINAL</span><span>SESSION: UI_ONLY</span></div>
+    <div class="screen" id="screen"></div>
+  </div>
+</div>
+<script>
+let CFG={tweetId:'2059988570417356939',tweetUrl:'https://x.com/TheBuenMomento/status/2059988570417356939',username:'TheBuenMomento',siteUrl:'https://thebuenmomento.com',isOpen:true,openAt:null,closeAt:null};
+async function fetchConfig(){try{const r=await fetch('/api/get-config');if(r.ok)Object.assign(CFG,await r.json());}catch(e){}}
+function getUrls(){return{follow:'https://x.com/intent/follow?screen_name='+CFG.username,like:'https://x.com/intent/like?tweet_id='+CFG.tweetId,retweet:'https://x.com/intent/retweet?tweet_id='+CFG.tweetId,quote:'https://x.com/intent/tweet?text='+encodeURIComponent('I just joined @'+CFG.username+' — the movement is real! \nCheck it out: '+CFG.siteUrl+' | https://x.com/'+CFG.username+' #TheBuenMomento')};}
+
+(function(){const cv=document.getElementById('matrix-canvas'),cx=cv.getContext('2d');const chars='01アイウエオカキクケコサシスセソタチツテト01010101░▒▓ABCDEF0123456789#$%&@!?><{}[]';let cols,drops,fs=13;function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;cols=Math.floor(cv.width/fs);drops=Array(cols).fill(1);}resize();window.addEventListener('resize',resize);setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.04)';cx.fillRect(0,0,cv.width,cv.height);for(let i=0;i<cols;i++){const ch=chars[Math.floor(Math.random()*chars.length)];cx.fillStyle=Math.random()>0.97?'#fff':(Math.random()>0.5?'#00ffcc':'#004433');cx.font=fs+'px Courier New';cx.fillText(ch,i*fs,drops[i]*fs);if(drops[i]*fs>cv.height&&Math.random()>0.975)drops[i]=0;drops[i]++;}},40);})();
+setInterval(()=>{const e=document.getElementById('live-clock');if(e)e.textContent=new Date().toLocaleTimeString('en-GB',{hour12:false})+' UTC';},1000);
+
+let actx=null,muted=false,ambientNodes=[],ambientRunning=false;
+function getCtx(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx;}
+function toggleMute(){muted=!muted;const b=document.getElementById('mute-btn');b.textContent=muted?'UNMUTE':'MUTE SOUND';b.classList.toggle('on',!muted);if(!muted){getCtx();startAmbient();}else stopAmbient();}
+function initAudio(){if(!ambientRunning&&!muted){getCtx();startAmbient();}document.removeEventListener('click',initAudio);document.removeEventListener('keydown',initAudio);}
+document.addEventListener('click',initAudio);document.addEventListener('keydown',initAudio);
+function startAmbient(){
+  if(ambientRunning||muted)return;ambientRunning=true;const ctx=getCtx();
+  const sub=ctx.createOscillator(),subG=ctx.createGain();sub.type='sawtooth';sub.frequency.value=40;subG.gain.value=0.05;sub.connect(subG);subG.connect(ctx.destination);sub.start();ambientNodes.push(sub,subG);
+  const mid=ctx.createOscillator(),dist=ctx.createWaveShaper(),midG=ctx.createGain();const curve=new Float32Array(256);for(let i=0;i<256;i++){const x=i*2/256-1;curve[i]=Math.tanh(x*8);}dist.curve=curve;mid.type='square';mid.frequency.value=80;midG.gain.value=0.028;mid.connect(dist);dist.connect(midG);midG.connect(ctx.destination);mid.start();ambientNodes.push(mid,dist,midG);
+  const af=[220,277,330,440,554,659,880,1109];let ai=0;
+  function arp(){if(!ambientRunning||muted)return;const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=800;f.Q.value=2;o.type='square';o.frequency.value=af[ai%af.length];ai++;g.gain.setValueAtTime(0.065,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.065);o.connect(f);f.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.065);setTimeout(arp,65+Math.random()*75);}arp();
+  function db(){if(!ambientRunning||muted)return;const len=Math.floor(ctx.sampleRate*(0.008+Math.random()*0.035));const buf=ctx.createBuffer(1,len,ctx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);const src=ctx.createBufferSource(),filt=ctx.createBiquadFilter(),g=ctx.createGain();filt.type='highpass';filt.frequency.value=800+Math.random()*3000;g.gain.value=0.07;src.buffer=buf;src.connect(filt);filt.connect(g);g.connect(ctx.destination);src.start();setTimeout(db,60+Math.random()*350);}db();
+  function ps(){if(!ambientRunning||muted)return;const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';const sf=150+Math.random()*600;o.frequency.setValueAtTime(sf,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(sf*4,ctx.currentTime+0.25);g.gain.setValueAtTime(0.04,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.25);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.25);setTimeout(ps,600+Math.random()*1800);}ps();
+}
+function stopAmbient(){ambientRunning=false;ambientNodes.forEach(n=>{try{n.stop?n.stop():n.disconnect();}catch(e){}});ambientNodes=[];}
+function playKeyClick(){if(muted)return;const ctx=getCtx();const len=Math.floor(ctx.sampleRate*0.022);const buf=ctx.createBuffer(1,len,ctx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,5);const src=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type='bandpass';f.frequency.value=1400;f.Q.value=0.7;g.gain.value=0.18;src.buffer=buf;src.connect(f);f.connect(g);g.connect(ctx.destination);src.start();}
+function playTaskDone(){if(muted)return;const ctx=getCtx();[0,90].forEach((delay,i)=>{setTimeout(()=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.setValueAtTime(i?880:660,ctx.currentTime);o.frequency.linearRampToValueAtTime(i?1320:880,ctx.currentTime+0.09);g.gain.setValueAtTime(0.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.13);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.13);},delay);});}
+function playAccessGranted(){if(muted)return;const ctx=getCtx();[[220,0],[330,45],[440,90],[660,135],[880,180]].forEach(([freq,delay])=>{setTimeout(()=>{const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=2200;o.type='sawtooth';o.frequency.value=freq;g.gain.setValueAtTime(0.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.4);o.connect(f);f.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.4);},delay);});}
+function playScan(){if(muted)return;const ctx=getCtx();let t=ctx.currentTime;for(let i=0;i<14;i++){const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.setValueAtTime(180+i*140,t);o.frequency.linearRampToValueAtTime(180+(i+1)*140,t+0.055);g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.055);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+0.055);t+=0.048;}}
+function playWarning(){if(muted)return;const ctx=getCtx();[0,260,520,780].forEach(delay=>{setTimeout(()=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.setValueAtTime(440,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(880,ctx.currentTime+0.12);g.gain.setValueAtTime(0.22,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.16);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.16);},delay);});}
+function playCountdownBeep(n){if(muted)return;const ctx=getCtx();const freq=[0,195,210,225,242,260][n]||195;const o=ctx.createOscillator(),g=ctx.createGain(),dist=ctx.createWaveShaper();const c=new Float32Array(256);for(let i=0;i<256;i++){const x=i*2/256-1;c[i]=Math.tanh(x*(4+n*3));}dist.curve=c;o.type='sawtooth';o.frequency.value=freq;g.gain.setValueAtTime(0.28,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.22);o.connect(dist);dist.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+0.22);}
+function playCrash(){if(muted)return;const ctx=getCtx();[0,80,250,600,1400].forEach((delay,i)=>{setTimeout(()=>{const len=Math.floor(ctx.sampleRate*(0.3+i*0.18));const buf=ctx.createBuffer(1,len,ctx.sampleRate);const d=buf.getChannelData(0);for(let j=0;j<len;j++)d[j]=(Math.random()*2-1)*Math.pow(1-j/len,0.28);const src=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type='lowpass';f.frequency.value=350+i*180;g.gain.value=0.42-i*0.07;src.buffer=buf;src.connect(f);f.connect(g);g.connect(ctx.destination);src.start();},delay);});const o=ctx.createOscillator(),g=ctx.createGain();o.type='sawtooth';o.frequency.setValueAtTime(200,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(18,ctx.currentTime+2.2);g.gain.setValueAtTime(0.14,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+2.2);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+2.2);}
+
+const screen=document.getElementById('screen');
+let state={step:0,username:'',tasks:{follow:false,like:false,retweet:false,quote:false},quoteLink:'',referral:'',contribution:'',wallet:''};
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
+function addLine(text,cls='dim',delay=0){return new Promise(res=>setTimeout(()=>{playKeyClick();const d=el('div','line '+cls,text);screen.appendChild(d);screen.scrollTop=screen.scrollHeight;res();},delay));}
+async function lines(arr){for(const[t,c,d]of arr)await addLine(t,c||'dim',d||0);}
+function clearScreen(){screen.innerHTML='';}
+function addPrompt(label,type,onEnter,ph){const row=el('div','prompt-row'),lbl=el('span','prompt-label',label),inp=el('input');inp.className='prompt-input';inp.type=type||'text';inp.placeholder=ph||'';inp.autocomplete='off';inp.spellcheck=false;row.appendChild(lbl);row.appendChild(inp);screen.appendChild(row);screen.scrollTop=screen.scrollHeight;setTimeout(()=>inp.focus(),80);inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();onEnter(inp.value.trim());}});}
+function xPopup(url){const w=600,h=550,left=window.screen.width/2-300,top=window.screen.height/2-275;window.open(url,'_blank','width='+w+',height='+h+',left='+left+',top='+top+',toolbar=no,menubar=no,scrollbars=yes');}
+
+function showCountdownTimer(openAt){
+  clearScreen();
+  const target=new Date(openAt).getTime();
+  const pre=el('pre','ascii-title');pre.textContent=[' TTTTTTT BBBBB  M   M','    T    B    B MM MM','    T    BBBBB  M M M','    T    B    B M   M','    T    BBBBB  M   M'].join('\n');screen.appendChild(pre);
+  addLine('&gt; TRANSMISSION WINDOW NOT YET OPEN','bright');addLine('&gt; AGENT REGISTRATION OPENS IN:','dim');
+  const units=el('div','timer-units');
+  ['d','h','m','s'].forEach(u=>{const div=el('div','timer-unit');div.innerHTML='<span class="val" id="tc-'+u+'">00</span><span class="lbl">'+{d:'DAYS',h:'HRS',m:'MIN',s:'SEC'}[u]+'</span>';units.appendChild(div);});
+  screen.appendChild(units);
+  addLine('','dim');addLine('&gt; STAND BY. AGENT REGISTRATION OPENS SOON.','dim');
+  function pad(n){return String(n).padStart(2,'0');}
+  const iv=setInterval(()=>{const diff=target-Date.now();if(diff<=0){clearInterval(iv);location.reload();return;}const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);document.getElementById('tc-d').textContent=pad(d);document.getElementById('tc-h').textContent=pad(h);document.getElementById('tc-m').textContent=pad(m);document.getElementById('tc-s').textContent=pad(s);},1000);
+}
+
+function showClosed(){clearScreen();addLine('','dim');addLine('TRANSMISSION WINDOW CLOSED','err');addLine('&gt; AGENT REGISTRATION HAS ENDED.','dim');addLine('&gt; FOLLOW @TheBuenMomento FOR UPDATES.','dim');}
+
+async function boot(){
+  await fetchConfig();
+  const now=Date.now(),openAt=CFG.openAt?new Date(CFG.openAt).getTime():null,closeAt=CFG.closeAt?new Date(CFG.closeAt).getTime():null;
+  if(openAt&&now<openAt){showCountdownTimer(CFG.openAt);return;}
+  if(closeAt&&now>closeAt){showClosed();return;}
+  if(!CFG.isOpen){showClosed();return;}
+  step0();
+}
+
+async function step0(){
+  clearScreen();
+  const pre=el('pre','ascii-title');pre.textContent=[' TTTTTTT BBBBB  M   M',' T B B MM MM',' T BBBBB M M M',' T B B M M',' T BBBBB M M'].join('\n');
+  // use real ASCII art
+  pre.textContent=' \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2591\u2588\u2588\u2557\u2591\u2591\u2591\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2588\u2557\u2591\u2591\u2591\u2588\u2588\u2557\n\u2591\u2591\u2591\u2588\u2588\u2554\u2550\u2550\u255d\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255d\u2588\u2588\u2588\u2588\u2557\u2591\u2591\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2588\u2588\u2588\u2588\u2564\u255d\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2557\u2591\u2591\u2588\u2588\u2554\u2588\u2588\u2557\u2591\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255d\u2591\u2591\u2588\u2588\u2551\u255a\u2588\u2588\u2557\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2588\u2588\u2588\u2588\u2564\u255d\u255a\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255d\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2551\u2591\u255a\u2588\u2588\u2588\u2588\u2551\n\u2591\u2591\u2591\u255a\u2550\u255d\u2591\u2591\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u255d\u2591\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u255d\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u255d\u255a\u2550\u255d\u2591\u2591\u255a\u2550\u2550\u2550\u255d';
+  screen.appendChild(pre);
+  await lines([['&gt; THEBUENMOMENTO powered by @TheBuenMomento','bright',100],['&gt; SIGNAL DETECTED','dim',300],['&gt; SOURCE: THEBUENMOMENTO GATEWAY','dim',500],['&gt; PROTOCOL: TERMINAL','dim',700],['&gt; ENTER TRANSMISSION.','dim',900],['','dim',1000],['IDENTIFY YOURSELF, AGENT.','bright',1100]]);
+  setTimeout(()=>addPrompt('&gt; ENTER YOUR X USERNAME:&nbsp;','text',val=>{if(!val){addLine('EMPTY USERNAME.','warn');return;}state.username=val.startsWith('@')?val:'@'+val;verifyUser();},'@yourhandle'),1300);
+}
+
+async function verifyUser(){
+  await addLine('&gt; AUTHENTICATING '+state.username+'...','dim',200);await addLine('&gt; CROSS-REFERENCING X DATABASE...','dim',600);playScan();
+  await addLine('&gt; SCANNING NEURAL NETWORK...','dim',1100);await addLine('&gt; DECRYPTING IDENTITY HASH...','dim',1500);
+  await addLine('&gt; <span style="color:#ffaa00">USER FOUND:</span> '+state.username,'white',2000);playAccessGranted();
+  await addLine('&gt; ACCESS GRANTED. WELCOME TO THE MOVEMENT.','bright',2500);setTimeout(step1,3000);
+}
+
+async function step1(){
+  state.step=1;
+  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['MISSION BRIEFING &mdash; COMPLETE ALL 4 TASKS','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['','dim',500],['[01] FOLLOW &nbsp;[02] LIKE &nbsp;[03] RETWEET &nbsp;[04] QUOTE','white',600],['','dim',650],['&gt; EACH BUTTON OPENS A POPUP ON X.','dim',700]]);
+  setTimeout(renderTaskButtons,800);
+}
+
+function renderTaskButtons(){
+  const urls=getUrls();const wrap=el('div');wrap.style.marginTop='12px';
+  [{key:'follow',label:'[ 01 ] FOLLOW @TheBuenMomento',url:urls.follow,hint:'Follow popup'},{key:'like',label:'[ 02 ] LIKE THE POST',url:urls.like,hint:'Like popup'},{key:'retweet',label:'[ 03 ] RETWEET THE POST',url:urls.retweet,hint:'Retweet popup'},{key:'quote',label:'[ 04 ] QUOTE THE POST',url:urls.quote,hint:'Quote composer'}].forEach(t=>{
+    const row=el('div');row.style.cssText='display:flex;align-items:center;gap:10px;margin:6px 0;flex-wrap:wrap;';
+    const status=el('span');status.id='st-'+t.key;status.style.cssText='font-size:10px;width:82px;flex-shrink:0;color:#1a5c44;letter-spacing:0.1em;';status.textContent='[ PENDING ]';
+    const btn=el('button','action-btn',t.label);
+    const hint=el('span');hint.style.cssText='font-size:9px;color:#0d3322;letter-spacing:0.08em;';hint.textContent='-> '+t.hint;
+    btn.addEventListener('click',()=>{xPopup(t.url);setTimeout(()=>{if(state.tasks[t.key])return;state.tasks[t.key]=true;status.textContent='[  DONE  ]';status.style.color='#00ffcc';btn.className='action-btn done-btn';hint.textContent='DONE';hint.style.color='#00aa66';playTaskDone();checkTasks();},3000);});
+    row.appendChild(status);row.appendChild(btn);row.appendChild(hint);wrap.appendChild(row);
+  });
+  screen.appendChild(wrap);screen.scrollTop=screen.scrollHeight;
+}
+
+function checkTasks(){if(Object.values(state.tasks).every(Boolean)){setTimeout(async()=>{await addLine('','dim',100);await addLine('ALL TASKS COMPLETED. SIGNAL CONFIRMED.','bright',200);playAccessGranted();await addLine('&gt; PROCEEDING...','dim',600);setTimeout(step2,1000);},400);}}
+
+async function step2(){
+  state.step=2;
+  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['PHASE 02 &mdash; SUBMIT YOUR QUOTE LINK','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['&gt; PASTE URL OF YOUR QUOTE TWEET.','white',500],['&gt; FORMAT: https://x.com/yourname/status/...','dim',600],['','dim',650]]);
+  setTimeout(()=>addPrompt('&gt; QUOTE LINK: ','text',val=>{if(!val.startsWith('http')){addLine('INVALID URL.','err');return;}state.quoteLink=val;scanQuote();},'https://x.com/...'),700);
+}
+
+async function scanQuote(){playScan();await addLine('&gt; SCANNING...','dim',200);await addLine('&gt; PARSING POST DATA...','dim',700);await addLine('&gt; VERIFYING HASH...','dim',1200);await addLine('&gt; QUOTE VERIFIED. SIGNAL STRONG.','bright',1800);playAccessGranted();setTimeout(step3,2200);}
+
+async function step3(){
+  state.step=3;
+  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['PHASE 03 &mdash; INTEL GATHERING','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['&gt; HOW DID YOU DISCOVER THE MOVEMENT?','white',500],['','dim',550]]);
+  setTimeout(()=>{[['1','X / Twitter'],['2','Instagram'],['3','Friend / Referral'],['4','Telegram'],['5','Discord'],['6','Other']].forEach(([n,l])=>screen.appendChild(el('div','line dim','&nbsp;&nbsp;['+n+'] '+l)));screen.scrollTop=screen.scrollHeight;addPrompt('&gt; SELECT [1-6]: ','text',val=>{const map={'1':'X / Twitter','2':'Instagram','3':'Friend / Referral','4':'Telegram','5':'Discord','6':'Other'};state.referral=map[val]||val;addLine('&gt; LOGGED: '+state.referral,'bright').then(()=>setTimeout(step4,600));},'1');},700);
+}
+
+async function step4(){
+  state.step=4;
+  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['PHASE 04 &mdash; YOUR ROLE IN THE MOVEMENT','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['&gt; WHAT CONTRIBUTION CAN YOU MAKE?','white',500],['&gt; (SKILLS, IDEAS, RESOURCES, COMMUNITY...)','dim',600],['','dim',650]]);
+  setTimeout(()=>addPrompt('&gt; YOUR ANSWER: ','text',val=>{if(!val){addLine('REQUIRED FIELD.','warn');return;}state.contribution=val;addLine('&gt; NOTED.','bright').then(()=>setTimeout(step5,600));},'Type here...'),700);
+}
+
+async function step5(){
+  state.step=5;
+  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['PHASE 05 &mdash; WALLET REGISTRATION','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['&gt; ENTER YOUR WALLET ADDRESS.','white',500],['&gt; (SOL / EVM / TON)','dim',600],['','dim',650]]);
+  setTimeout(()=>addPrompt('&gt; WALLET: ','text',val=>{if(val.length<10){addLine('INVALID WALLET.','err');return;}state.wallet=val;addLine('&gt; WALLET REGISTERED: '+val.substring(0,16)+'...'+val.slice(-6),'bright').then(()=>{saveData();setTimeout(finalize,800);});},'0x... or sol...'),700);
+}
+
+async function saveData(){
+  const payload={...state,timestamp:new Date().toISOString(),id:'TBM-'+Math.random().toString(36).substr(2,6).toUpperCase()};
+  try{await fetch('/api/save-agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});}catch(e){}
+  try{const ex=JSON.parse(localStorage.getItem('tbm_agents')||'[]');ex.push(payload);localStorage.setItem('tbm_agents',JSON.stringify(ex));}catch(e){}
+}
+
+async function finalize(){
+  clearScreen();
+  await lines([['','dim',0],['========================================','bright',100],['      TRANSMISSION COMPLETE             ','bright',200],['========================================','bright',300],['','dim',400],['&gt; AGENT '+state.username+' &mdash; JOB WELL DONE.','bright',500],['&gt; YOU ARE NOW PART OF THE MOVEMENT.','white',700],['&gt; DATA ENCRYPTED AND STORED.','dim',900],['','dim',1000]]);
+  playAccessGranted();
+  await lines([['WARNING: SIGNAL OVERLOAD DETECTED','err',1300],['FIREWALL BREACH IMMINENT...','err',1700],['TERMINAL DESTABILIZING...','err',2100],['INITIATING EMERGENCY SHUTDOWN','err',2500],['','dim',2700]]);
+  document.querySelectorAll('.line.err').forEach(l=>l.classList.add('rgbsplit'));
+  setTimeout(()=>{
+    playWarning();
+    const wrap=el('div');wrap.style.cssText='text-align:center;margin:10px auto;';
+    const lbl=el('div','line err rgbsplit');lbl.style.cssText='text-align:center;letter-spacing:0.25em;margin-bottom:8px;font-size:13px;';lbl.textContent='SYSTEM CRASH IN...';
+    const num=el('div','countdown','5');wrap.appendChild(lbl);wrap.appendChild(num);screen.appendChild(wrap);screen.scrollTop=screen.scrollHeight;
+    let c=5;playCountdownBeep(5);
+    const iv=setInterval(()=>{c--;num.textContent=c;playCountdownBeep(c);if(c<=3)num.classList.add('glitch');if(c<=2)num.style.color='#f00';
+      if(c===0){clearInterval(iv);num.textContent='DEAD';stopAmbient();playCrash();let f=0;const fi=setInterval(()=>{document.body.style.background=f%2===0?'#fff':'#000';f++;if(f>10){clearInterval(fi);document.body.style.transition='opacity 1.2s';document.body.style.opacity='0';setTimeout(()=>{document.body.innerHTML='<div style="background:#000;min-height:100vh;display:flex;align-items:center;justify-content:center;"><pre style="color:#0a140a;font-family:Courier New,monospace;font-size:13px;letter-spacing:0.12em;text-align:center;line-height:2.2;">CONNECTION TERMINATED\n\nTHANK YOU, AGENT.\n\nC:\\THEBUENMOMENTO> _</pre></div>';document.body.style.opacity='1';},1200);}},70);}
+    },1000);
+  },2900);
+}
+
+boot();
+</script>
+</body>
+</html>
