@@ -72,12 +72,17 @@ html,body{background:#000;font-family:'Courier New',monospace;color:#00ffcc;min-
   </div>
 </div>
 <script>
-let CFG={tweetId:'2059988570417356939',tweetUrl:'https://x.com/TheBuenMomento/status/2059988570417356939',username:'TheBuenMomento',siteUrl:'https://thebuenmomento.com',isOpen:true,openAt:null,closeAt:null};
+let CFG={tweetId:'2059988570417356939',tweetUrl:'https://x.com/TheBuenMomento/status/2059988570417356939',username:'TheBuenMomento',siteUrl:'https://thebuenmomento.vercel.app',isOpen:true,openAt:null,closeAt:null};
 async function fetchConfig(){try{const r=await fetch('/api/get-config');if(r.ok)Object.assign(CFG,await r.json());}catch(e){}}
 
+function getUrls(){return{
+  follow:'https://x.com/intent/follow?screen_name='+CFG.username,
+  like:'https://x.com/intent/like?tweet_id='+CFG.tweetId,
+  retweet:'https://x.com/intent/retweet?tweet_id='+CFG.tweetId,
+  comment:'https://x.com/intent/tweet?in_reply_to='+CFG.tweetId+'&text='+encodeURIComponent('My wallet address: [paste your wallet here] 👇\n\n@'+CFG.username+' #TheBuenMomento'),
+  quote:'https://x.com/intent/tweet?text='+encodeURIComponent('I just joined @'+CFG.username+' — the movement is real! 🔥\n\nTag 2 friends who need to see this 👇\n\nhttps://thebuenmomento.vercel.app #TheBuenMomento')+'&url='+encodeURIComponent(CFG.tweetUrl)
+};}
 
-
-function getUrls(){return{follow:'https://x.com/intent/follow?screen_name='+CFG.username,like:'https://x.com/intent/like?tweet_id='+CFG.tweetId,retweet:'https://x.com/intent/retweet?tweet_id='+CFG.tweetId,quote:'https://x.com/intent/tweet?text='+encodeURIComponent('I just joined @'+CFG.username+' — the movement is real! 🔥\nCheck it out: https://thebuenmomento.vercel.app | https://x.com/'+CFG.username+' #TheBuenMomento\n\nTag 2 friends who need to see this 👇')};}
 (function(){const cv=document.getElementById('matrix-canvas'),cx=cv.getContext('2d');const chars='01アイウエオカキクケコサシスセソタチツテト01010101░▒▓ABCDEF0123456789#$%&@!?><{}[]';let cols,drops,fs=13;function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;cols=Math.floor(cv.width/fs);drops=Array(cols).fill(1);}resize();window.addEventListener('resize',resize);setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.04)';cx.fillRect(0,0,cv.width,cv.height);for(let i=0;i<cols;i++){const ch=chars[Math.floor(Math.random()*chars.length)];cx.fillStyle=Math.random()>0.97?'#fff':(Math.random()>0.5?'#00ffcc':'#004433');cx.font=fs+'px Courier New';cx.fillText(ch,i*fs,drops[i]*fs);if(drops[i]*fs>cv.height&&Math.random()>0.975)drops[i]=0;drops[i]++;}},40);})();
 setInterval(()=>{const e=document.getElementById('live-clock');if(e)e.textContent=new Date().toLocaleTimeString('en-GB',{hour12:false})+' UTC';},1000);
 
@@ -105,7 +110,7 @@ function playCountdownBeep(n){if(muted)return;const ctx=getCtx();const freq=[0,1
 function playCrash(){if(muted)return;const ctx=getCtx();[0,80,250,600,1400].forEach((delay,i)=>{setTimeout(()=>{const len=Math.floor(ctx.sampleRate*(0.3+i*0.18));const buf=ctx.createBuffer(1,len,ctx.sampleRate);const d=buf.getChannelData(0);for(let j=0;j<len;j++)d[j]=(Math.random()*2-1)*Math.pow(1-j/len,0.28);const src=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type='lowpass';f.frequency.value=350+i*180;g.gain.value=0.42-i*0.07;src.buffer=buf;src.connect(f);f.connect(g);g.connect(ctx.destination);src.start();},delay);});const o=ctx.createOscillator(),g=ctx.createGain();o.type='sawtooth';o.frequency.setValueAtTime(200,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(18,ctx.currentTime+2.2);g.gain.setValueAtTime(0.14,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+2.2);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+2.2);}
 
 const screen=document.getElementById('screen');
-let state={step:0,username:'',tasks:{follow:false,like:false,retweet:false,quote:false},quoteLink:'',referral:'',contribution:'',wallet:''};
+let state={step:0,username:'',tasks:{follow:false,like:false,retweet:false,comment:false,quote:false},quoteLink:'',referral:'',contribution:'',wallet:''};
 function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
 function addLine(text,cls='dim',delay=0){return new Promise(res=>setTimeout(()=>{playKeyClick();const d=el('div','line '+cls,text);screen.appendChild(d);screen.scrollTop=screen.scrollHeight;res();},delay));}
 async function lines(arr){for(const[t,c,d]of arr)await addLine(t,c||'dim',d||0);}
@@ -116,8 +121,11 @@ function xPopup(url){const w=600,h=550,left=window.screen.width/2-300,top=window
 function showCountdownTimer(openAt){
   clearScreen();
   const target=new Date(openAt).getTime();
-  const pre=el('pre','ascii-title');pre.textContent=[' TTTTTTT BBBBB  M   M','    T    B    B MM MM','    T    BBBBB  M M M','    T    B    B M   M','    T    BBBBB  M   M'].join('\n');screen.appendChild(pre);
-  addLine('&gt; TRANSMISSION WINDOW NOT YET OPEN','bright');addLine('&gt; AGENT REGISTRATION OPENS IN:','dim');
+  const pre=el('pre','ascii-title');
+  pre.textContent=' \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2591\u2588\u2588\u2557\u2591\u2591\u2591\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2588\u2557\u2591\u2591\u2591\u2588\u2588\u2557\n\u2591\u2591\u2591\u2588\u2588\u2554\u2550\u2550\u255d\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255d\u2588\u2588\u2588\u2588\u2557\u2591\u2591\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2588\u2588\u2588\u2588\u2564\u255d\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2557\u2591\u2591\u2588\u2588\u2554\u2588\u2588\u2557\u2591\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255d\u2591\u2591\u2588\u2588\u2551\u255a\u2588\u2588\u2557\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2588\u2588\u2588\u2588\u2564\u255d\u255a\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255d\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2551\u2591\u255a\u2588\u2588\u2588\u2588\u2551\n\u2591\u2591\u2591\u255a\u2550\u255d\u2591\u2591\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u255d\u2591\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u255d\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u255d\u255a\u2550\u255d\u2591\u2591\u255a\u2550\u2550\u2550\u255d';
+  screen.appendChild(pre);
+  addLine('&gt; TRANSMISSION WINDOW NOT YET OPEN','bright');
+  addLine('&gt; AGENT REGISTRATION OPENS IN:','dim');
   const units=el('div','timer-units');
   ['d','h','m','s'].forEach(u=>{const div=el('div','timer-unit');div.innerHTML='<span class="val" id="tc-'+u+'">00</span><span class="lbl">'+{d:'DAYS',h:'HRS',m:'MIN',s:'SEC'}[u]+'</span>';units.appendChild(div);});
   screen.appendChild(units);
@@ -139,66 +147,170 @@ async function boot(){
 
 async function step0(){
   clearScreen();
-  const pre=el('pre','ascii-title');pre.textContent=[' TTTTTTT BBBBB  M   M',' T B B MM MM',' T BBBBB M M M',' T B B M M',' T BBBBB M M'].join('\n');
-  // use real ASCII art
+  const pre=el('pre','ascii-title');
   pre.textContent=' \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2591\u2588\u2588\u2557\u2591\u2591\u2591\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2588\u2557\u2591\u2591\u2591\u2588\u2588\u2557\n\u2591\u2591\u2591\u2588\u2588\u2554\u2550\u2550\u255d\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255d\u2588\u2588\u2588\u2588\u2557\u2591\u2591\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2588\u2588\u2588\u2588\u2564\u255d\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2557\u2591\u2591\u2588\u2588\u2554\u2588\u2588\u2557\u2591\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255d\u2591\u2591\u2588\u2588\u2551\u255a\u2588\u2588\u2557\u2588\u2588\u2551\n\u2591\u2591\u2591\u2588\u2588\u2551\u2591\u2591\u2591\u2588\u2588\u2588\u2588\u2588\u2588\u2564\u255d\u255a\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255d\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2563\u2588\u2588\u2551\u2591\u255a\u2588\u2588\u2588\u2588\u2551\n\u2591\u2591\u2591\u255a\u2550\u255d\u2591\u2591\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u255d\u2591\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u255d\u2591\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u255d\u255a\u2550\u255d\u2591\u2591\u255a\u2550\u2550\u2550\u255d';
   screen.appendChild(pre);
-  await lines([['&gt; THEBUENMOMENTO powered by @TheBuenMomento','bright',100],['&gt; SIGNAL DETECTED','dim',300],['&gt; SOURCE: THEBUENMOMENTO GATEWAY','dim',500],['&gt; PROTOCOL: TERMINAL','dim',700],['&gt; ENTER TRANSMISSION.','dim',900],['','dim',1000],['IDENTIFY YOURSELF, AGENT.','bright',1100]]);
+  await lines([
+    ['&gt; THEBUENMOMENTO powered by @TheBuenMomento','bright',100],
+    ['&gt; SIGNAL DETECTED','dim',300],
+    ['&gt; SOURCE: THEBUENMOMENTO GATEWAY','dim',500],
+    ['&gt; PROTOCOL: TERMINAL','dim',700],
+    ['&gt; ENTER TRANSMISSION.','dim',900],
+    ['','dim',1000],
+    ['IDENTIFY YOURSELF, AGENT.','bright',1100]
+  ]);
   setTimeout(()=>addPrompt('&gt; ENTER YOUR X USERNAME:&nbsp;','text',val=>{if(!val){addLine('EMPTY USERNAME.','warn');return;}state.username=val.startsWith('@')?val:'@'+val;verifyUser();},'@yourhandle'),1300);
 }
 
 async function verifyUser(){
-  await addLine('&gt; AUTHENTICATING '+state.username+'...','dim',200);await addLine('&gt; CROSS-REFERENCING X DATABASE...','dim',600);playScan();
-  await addLine('&gt; SCANNING NEURAL NETWORK...','dim',1100);await addLine('&gt; DECRYPTING IDENTITY HASH...','dim',1500);
+  await addLine('&gt; AUTHENTICATING '+state.username+'...','dim',200);
+  await addLine('&gt; CROSS-REFERENCING X DATABASE...','dim',600);playScan();
+  await addLine('&gt; SCANNING NEURAL NETWORK...','dim',1100);
+  await addLine('&gt; DECRYPTING IDENTITY HASH...','dim',1500);
   await addLine('&gt; <span style="color:#ffaa00">USER FOUND:</span> '+state.username,'white',2000);playAccessGranted();
   await addLine('&gt; ACCESS GRANTED. WELCOME TO THE MOVEMENT.','bright',2500);setTimeout(step1,3000);
 }
 
 async function step1(){
   state.step=1;
-  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['MISSION BRIEFING &mdash; COMPLETE ALL 4 TASKS','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['','dim',500],['[01] FOLLOW &nbsp;[02] LIKE &nbsp;[03] RETWEET &nbsp;[04] QUOTE','white',600],['','dim',650],['&gt; EACH BUTTON OPENS A POPUP ON X.','dim',700]]);
+  await lines([
+    ['','dim',100],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],
+    ['MISSION BRIEFING &mdash; COMPLETE ALL 5 TASKS','bright',300],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],
+    ['','dim',500],
+    ['[01] FOLLOW &nbsp;[02] LIKE &nbsp;[03] RETWEET &nbsp;[04] COMMENT &nbsp;[05] QUOTE','white',600],
+    ['','dim',650],
+    ['&gt; EACH BUTTON OPENS A POPUP ON X.','dim',700]
+  ]);
   setTimeout(renderTaskButtons,800);
 }
 
 function renderTaskButtons(){
-  const urls=getUrls();const wrap=el('div');wrap.style.marginTop='12px';
-  [{key:'follow',label:'[ 01 ] FOLLOW @TheBuenMomento',url:urls.follow,hint:'Follow popup'},{key:'like',label:'[ 02 ] LIKE THE POST',url:urls.like,hint:'Like popup'},{key:'retweet',label:'[ 03 ] RETWEET THE POST',url:urls.retweet,hint:'Retweet popup'},{key:'quote',label:'[ 04 ] QUOTE THE POST',url:urls.quote,hint:'Quote composer'}].forEach(t=>{
+  const urls=getUrls();
+  const wrap=el('div');wrap.style.marginTop='12px';
+  [
+    {key:'follow',  label:'[ 01 ] FOLLOW @TheBuenMomento', url:urls.follow,  hint:'Opens follow popup'},
+    {key:'like',    label:'[ 02 ] LIKE THE POST',          url:urls.like,    hint:'Opens like popup'},
+    {key:'retweet', label:'[ 03 ] RETWEET THE POST',       url:urls.retweet, hint:'Opens retweet popup'},
+    {key:'comment', label:'[ 04 ] COMMENT YOUR WALLET',    url:urls.comment, hint:'Reply wallet to the post'},
+    {key:'quote',   label:'[ 05 ] QUOTE THE POST',         url:urls.quote,   hint:'Quote with tweet card'},
+  ].forEach(t=>{
     const row=el('div');row.style.cssText='display:flex;align-items:center;gap:10px;margin:6px 0;flex-wrap:wrap;';
     const status=el('span');status.id='st-'+t.key;status.style.cssText='font-size:10px;width:82px;flex-shrink:0;color:#1a5c44;letter-spacing:0.1em;';status.textContent='[ PENDING ]';
     const btn=el('button','action-btn',t.label);
     const hint=el('span');hint.style.cssText='font-size:9px;color:#0d3322;letter-spacing:0.08em;';hint.textContent='-> '+t.hint;
-    btn.addEventListener('click',()=>{xPopup(t.url);setTimeout(()=>{if(state.tasks[t.key])return;state.tasks[t.key]=true;status.textContent='[  DONE  ]';status.style.color='#00ffcc';btn.className='action-btn done-btn';hint.textContent='DONE';hint.style.color='#00aa66';playTaskDone();checkTasks();},3000);});
+    btn.addEventListener('click',()=>{
+      xPopup(t.url);
+      setTimeout(()=>{
+        if(state.tasks[t.key])return;
+        state.tasks[t.key]=true;
+        status.textContent='[  DONE  ]';status.style.color='#00ffcc';
+        btn.className='action-btn done-btn';
+        hint.textContent='DONE';hint.style.color='#00aa66';
+        playTaskDone();checkTasks();
+      },3000);
+    });
     row.appendChild(status);row.appendChild(btn);row.appendChild(hint);wrap.appendChild(row);
   });
   screen.appendChild(wrap);screen.scrollTop=screen.scrollHeight;
 }
 
-function checkTasks(){if(Object.values(state.tasks).every(Boolean)){setTimeout(async()=>{await addLine('','dim',100);await addLine('ALL TASKS COMPLETED. SIGNAL CONFIRMED.','bright',200);playAccessGranted();await addLine('&gt; PROCEEDING...','dim',600);setTimeout(step2,1000);},400);}}
+function checkTasks(){
+  if(Object.values(state.tasks).every(Boolean)){
+    setTimeout(async()=>{
+      await addLine('','dim',100);
+      await addLine('ALL TASKS COMPLETED. SIGNAL CONFIRMED.','bright',200);
+      playAccessGranted();
+      await addLine('&gt; PROCEEDING...','dim',600);
+      setTimeout(step2,1000);
+    },400);
+  }
+}
 
 async function step2(){
   state.step=2;
-  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['PHASE 02 &mdash; SUBMIT YOUR QUOTE LINK','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['&gt; PASTE URL OF YOUR QUOTE TWEET.','white',500],['&gt; FORMAT: https://x.com/yourname/status/...','dim',600],['','dim',650]]);
-  setTimeout(()=>addPrompt('&gt; QUOTE LINK: ','text',val=>{if(!val.startsWith('http')){addLine('INVALID URL.','err');return;}state.quoteLink=val;scanQuote();},'https://x.com/...'),700);
+  await lines([
+    ['','dim',100],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],
+    ['PHASE 02 &mdash; SUBMIT YOUR QUOTE LINK','bright',300],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],
+    ['&gt; PASTE URL OF YOUR QUOTE TWEET.','white',500],
+    ['&gt; FORMAT: https://x.com/yourname/status/...','dim',600],
+    ['','dim',650]
+  ]);
+  setTimeout(()=>addPrompt('&gt; QUOTE LINK: ','text',val=>{
+    if(!val.startsWith('http')){addLine('INVALID URL.','err');return;}
+    state.quoteLink=val;scanQuote();
+  },'https://x.com/...'),700);
 }
 
-async function scanQuote(){playScan();await addLine('&gt; SCANNING...','dim',200);await addLine('&gt; PARSING POST DATA...','dim',700);await addLine('&gt; VERIFYING HASH...','dim',1200);await addLine('&gt; QUOTE VERIFIED. SIGNAL STRONG.','bright',1800);playAccessGranted();setTimeout(step3,2200);}
+async function scanQuote(){
+  playScan();
+  await addLine('&gt; SCANNING...','dim',200);
+  await addLine('&gt; PARSING POST DATA...','dim',700);
+  await addLine('&gt; VERIFYING HASH...','dim',1200);
+  await addLine('&gt; QUOTE VERIFIED. SIGNAL STRONG.','bright',1800);
+  playAccessGranted();setTimeout(step3,2200);
+}
 
 async function step3(){
   state.step=3;
-  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['PHASE 03 &mdash; INTEL GATHERING','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['&gt; HOW DID YOU DISCOVER THE MOVEMENT?','white',500],['','dim',550]]);
-  setTimeout(()=>{[['1','X / Twitter'],['2','Instagram'],['3','Friend / Referral'],['4','Telegram'],['5','Discord'],['6','Other']].forEach(([n,l])=>screen.appendChild(el('div','line dim','&nbsp;&nbsp;['+n+'] '+l)));screen.scrollTop=screen.scrollHeight;addPrompt('&gt; SELECT [1-6]: ','text',val=>{const map={'1':'X / Twitter','2':'Instagram','3':'Friend / Referral','4':'Telegram','5':'Discord','6':'Other'};state.referral=map[val]||val;addLine('&gt; LOGGED: '+state.referral,'bright').then(()=>setTimeout(step4,600));},'1');},700);
+  await lines([
+    ['','dim',100],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],
+    ['PHASE 03 &mdash; INTEL GATHERING','bright',300],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],
+    ['&gt; HOW DID YOU DISCOVER THE MOVEMENT?','white',500],
+    ['','dim',550]
+  ]);
+  setTimeout(()=>{
+    [['1','X / Twitter'],['2','Instagram'],['3','Friend / Referral'],['4','Telegram'],['5','Discord'],['6','Other']].forEach(([n,l])=>screen.appendChild(el('div','line dim','&nbsp;&nbsp;['+n+'] '+l)));
+    screen.scrollTop=screen.scrollHeight;
+    addPrompt('&gt; SELECT [1-6]: ','text',val=>{
+      const map={'1':'X / Twitter','2':'Instagram','3':'Friend / Referral','4':'Telegram','5':'Discord','6':'Other'};
+      state.referral=map[val]||val;
+      addLine('&gt; LOGGED: '+state.referral,'bright').then(()=>setTimeout(step4,600));
+    },'1');
+  },700);
 }
 
 async function step4(){
   state.step=4;
-  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['PHASE 04 &mdash; YOUR ROLE IN THE MOVEMENT','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['&gt; WHAT CONTRIBUTION CAN YOU MAKE?','white',500],['&gt; (SKILLS, IDEAS, RESOURCES, COMMUNITY...)','dim',600],['','dim',650]]);
-  setTimeout(()=>addPrompt('&gt; YOUR ANSWER: ','text',val=>{if(!val){addLine('REQUIRED FIELD.','warn');return;}state.contribution=val;addLine('&gt; NOTED.','bright').then(()=>setTimeout(step5,600));},'Type here...'),700);
+  await lines([
+    ['','dim',100],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],
+    ['PHASE 04 &mdash; YOUR ROLE IN THE MOVEMENT','bright',300],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],
+    ['&gt; WHAT CONTRIBUTION CAN YOU MAKE?','white',500],
+    ['&gt; (SKILLS, IDEAS, RESOURCES, COMMUNITY...)','dim',600],
+    ['','dim',650]
+  ]);
+  setTimeout(()=>addPrompt('&gt; YOUR ANSWER: ','text',val=>{
+    if(!val){addLine('REQUIRED FIELD.','warn');return;}
+    state.contribution=val;
+    addLine('&gt; NOTED.','bright').then(()=>setTimeout(step5,600));
+  },'Type here...'),700);
 }
 
 async function step5(){
   state.step=5;
-  await lines([['','dim',100],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],['PHASE 05 &mdash; WALLET REGISTRATION','bright',300],['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],['&gt; ENTER YOUR WALLET ADDRESS.','white',500],['&gt; (SOL / EVM / TON)','dim',600],['','dim',650]]);
-  setTimeout(()=>addPrompt('&gt; WALLET: ','text',val=>{if(val.length<10){addLine('INVALID WALLET.','err');return;}state.wallet=val;addLine('&gt; WALLET REGISTERED: '+val.substring(0,16)+'...'+val.slice(-6),'bright').then(()=>{saveData();setTimeout(finalize,800);});},'0x... or sol...'),700);
+  await lines([
+    ['','dim',100],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',200],
+    ['PHASE 05 &mdash; WALLET REGISTRATION','bright',300],
+    ['&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;','dim',400],
+    ['&gt; ENTER YOUR WALLET ADDRESS.','white',500],
+    ['&gt; (SOL / EVM / TON)','dim',600],
+    ['','dim',650]
+  ]);
+  setTimeout(()=>addPrompt('&gt; WALLET: ','text',val=>{
+    if(val.length<10){addLine('INVALID WALLET.','err');return;}
+    state.wallet=val;
+    addLine('&gt; WALLET REGISTERED: '+val.substring(0,16)+'...'+val.slice(-6),'bright').then(()=>{
+      saveData();setTimeout(finalize,800);
+    });
+  },'0x... or sol...'),700);
 }
 
 async function saveData(){
@@ -209,18 +321,51 @@ async function saveData(){
 
 async function finalize(){
   clearScreen();
-  await lines([['','dim',0],['========================================','bright',100],['      TRANSMISSION COMPLETE             ','bright',200],['========================================','bright',300],['','dim',400],['&gt; AGENT '+state.username+' &mdash; JOB WELL DONE.','bright',500],['&gt; YOU ARE NOW PART OF THE MOVEMENT.','white',700],['&gt; DATA ENCRYPTED AND STORED.','dim',900],['','dim',1000]]);
+  await lines([
+    ['','dim',0],
+    ['========================================','bright',100],
+    ['      TRANSMISSION COMPLETE             ','bright',200],
+    ['========================================','bright',300],
+    ['','dim',400],
+    ['&gt; AGENT '+state.username+' &mdash; JOB WELL DONE.','bright',500],
+    ['&gt; YOU ARE NOW PART OF THE MOVEMENT.','white',700],
+    ['&gt; DATA ENCRYPTED AND STORED.','dim',900],
+    ['','dim',1000]
+  ]);
   playAccessGranted();
-  await lines([['WARNING: SIGNAL OVERLOAD DETECTED','err',1300],['FIREWALL BREACH IMMINENT...','err',1700],['TERMINAL DESTABILIZING...','err',2100],['INITIATING EMERGENCY SHUTDOWN','err',2500],['','dim',2700]]);
+  await lines([
+    ['WARNING: SIGNAL OVERLOAD DETECTED','err',1300],
+    ['FIREWALL BREACH IMMINENT...','err',1700],
+    ['TERMINAL DESTABILIZING...','err',2100],
+    ['INITIATING EMERGENCY SHUTDOWN','err',2500],
+    ['','dim',2700]
+  ]);
   document.querySelectorAll('.line.err').forEach(l=>l.classList.add('rgbsplit'));
   setTimeout(()=>{
     playWarning();
     const wrap=el('div');wrap.style.cssText='text-align:center;margin:10px auto;';
     const lbl=el('div','line err rgbsplit');lbl.style.cssText='text-align:center;letter-spacing:0.25em;margin-bottom:8px;font-size:13px;';lbl.textContent='SYSTEM CRASH IN...';
-    const num=el('div','countdown','5');wrap.appendChild(lbl);wrap.appendChild(num);screen.appendChild(wrap);screen.scrollTop=screen.scrollHeight;
+    const num=el('div','countdown','5');
+    wrap.appendChild(lbl);wrap.appendChild(num);screen.appendChild(wrap);screen.scrollTop=screen.scrollHeight;
     let c=5;playCountdownBeep(5);
-    const iv=setInterval(()=>{c--;num.textContent=c;playCountdownBeep(c);if(c<=3)num.classList.add('glitch');if(c<=2)num.style.color='#f00';
-      if(c===0){clearInterval(iv);num.textContent='DEAD';stopAmbient();playCrash();let f=0;const fi=setInterval(()=>{document.body.style.background=f%2===0?'#fff':'#000';f++;if(f>10){clearInterval(fi);document.body.style.transition='opacity 1.2s';document.body.style.opacity='0';setTimeout(()=>{document.body.innerHTML='<div style="background:#000;min-height:100vh;display:flex;align-items:center;justify-content:center;"><pre style="color:#0a140a;font-family:Courier New,monospace;font-size:13px;letter-spacing:0.12em;text-align:center;line-height:2.2;">CONNECTION TERMINATED\n\nTHANK YOU, AGENT.\n\nC:\\THEBUENMOMENTO> _</pre></div>';document.body.style.opacity='1';},1200);}},70);}
+    const iv=setInterval(()=>{
+      c--;num.textContent=c;playCountdownBeep(c);
+      if(c<=3)num.classList.add('glitch');
+      if(c<=2)num.style.color='#f00';
+      if(c===0){
+        clearInterval(iv);num.textContent='DEAD';stopAmbient();playCrash();
+        let f=0;const fi=setInterval(()=>{
+          document.body.style.background=f%2===0?'#fff':'#000';f++;
+          if(f>10){
+            clearInterval(fi);
+            document.body.style.transition='opacity 1.2s';document.body.style.opacity='0';
+            setTimeout(()=>{
+              document.body.innerHTML='<div style="background:#000;min-height:100vh;display:flex;align-items:center;justify-content:center;"><pre style="color:#0a140a;font-family:Courier New,monospace;font-size:13px;letter-spacing:0.12em;text-align:center;line-height:2.2;">CONNECTION TERMINATED\n\nTHANK YOU, AGENT.\n\nC:\\THEBUENMOMENTO> _</pre></div>';
+              document.body.style.opacity='1';
+            },1200);
+          }
+        },70);
+      }
     },1000);
   },2900);
 }
