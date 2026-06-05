@@ -1,9 +1,11 @@
 {
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/admin",    "dest": "/admin/index.html" },
-    { "src": "/admin/(.*)", "dest": "/admin/$1" },
-    { "src": "/",         "dest": "/public/index.html" },
-    { "src": "/(.*)",     "dest": "/public/$1" }
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/save-agent",    "destination": "/api/save-agent.js" },
+    { "source": "/api/get-agents",    "destination": "/api/get-agents.js" },
+    { "source": "/api/get-config",    "destination": "/api/get-config.js" },
+    { "source": "/api/update-config", "destination": "/api/update-config.js" },
+    { "source": "/",                  "destination": "/public/index.html" },
+    { "source": "/admin",             "destination": "/admin/index.html" }
   ]
 }
