@@ -74,8 +74,10 @@ html,body{background:#000;font-family:'Courier New',monospace;color:#00ffcc;min-
 <script>
 let CFG={tweetId:'2059988570417356939',tweetUrl:'https://x.com/TheBuenMomento/status/2059988570417356939',username:'TheBuenMomento',siteUrl:'https://thebuenmomento.com',isOpen:true,openAt:null,closeAt:null};
 async function fetchConfig(){try{const r=await fetch('/api/get-config');if(r.ok)Object.assign(CFG,await r.json());}catch(e){}}
-function getUrls(){return{follow:'https://x.com/intent/follow?screen_name='+CFG.username,like:'https://x.com/intent/like?tweet_id='+CFG.tweetId,retweet:'https://x.com/intent/retweet?tweet_id='+CFG.tweetId,quote:'https://x.com/intent/tweet?text='+encodeURIComponent('I just joined @'+CFG.username+' — the movement is real! \nCheck it out: '+CFG.siteUrl+' | https://x.com/'+CFG.username+' #TheBuenMomento')};}
 
+
+
+function getUrls(){return{follow:'https://x.com/intent/follow?screen_name='+CFG.username,like:'https://x.com/intent/like?tweet_id='+CFG.tweetId,retweet:'https://x.com/intent/retweet?tweet_id='+CFG.tweetId,quote:'https://x.com/intent/tweet?text='+encodeURIComponent('I just joined @'+CFG.username+' — the movement is real! 🔥\nCheck it out: https://thebuenmomento.vercel.app | https://x.com/'+CFG.username+' #TheBuenMomento\n\nTag 2 friends who need to see this 👇')};}
 (function(){const cv=document.getElementById('matrix-canvas'),cx=cv.getContext('2d');const chars='01アイウエオカキクケコサシスセソタチツテト01010101░▒▓ABCDEF0123456789#$%&@!?><{}[]';let cols,drops,fs=13;function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight;cols=Math.floor(cv.width/fs);drops=Array(cols).fill(1);}resize();window.addEventListener('resize',resize);setInterval(()=>{cx.fillStyle='rgba(0,0,0,0.04)';cx.fillRect(0,0,cv.width,cv.height);for(let i=0;i<cols;i++){const ch=chars[Math.floor(Math.random()*chars.length)];cx.fillStyle=Math.random()>0.97?'#fff':(Math.random()>0.5?'#00ffcc':'#004433');cx.font=fs+'px Courier New';cx.fillText(ch,i*fs,drops[i]*fs);if(drops[i]*fs>cv.height&&Math.random()>0.975)drops[i]=0;drops[i]++;}},40);})();
 setInterval(()=>{const e=document.getElementById('live-clock');if(e)e.textContent=new Date().toLocaleTimeString('en-GB',{hour12:false})+' UTC';},1000);
 
